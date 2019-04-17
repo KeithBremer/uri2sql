@@ -1,3 +1,8 @@
+//
+// This server file is used as a testbed for the uri2sql function
+// and serves no other purpose. It can be adapted to your own
+// database configuration if you want.
+//
 const express = require("express");
 const app = express();
 const Pool = require('pg').Pool;
