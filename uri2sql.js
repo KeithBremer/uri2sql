@@ -146,9 +146,9 @@ function uri2sql(query, columns) {
             //
             sql = sql + subs + (substitution++) + " AND " + subs + (substitution++) + " ";
             val = getValue(query[col][op]);
-            varr = val.split(":");
+            var varr = val.split(":");
             if (varr[0] != undefined) {
-              valueArray.push(valarr[0]);
+              valueArray.push(varr[0]);
               if (varr[1] != undefined) {
                 valueArray.push(varr[1])
               } else {
