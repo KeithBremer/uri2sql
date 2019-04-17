@@ -152,10 +152,10 @@ function uri2sql(query, columns) {
               if (varr[1] != undefined) {
                 valueArray.push(varr[1])
               } else {
-                raise "ERROR: missing value parameter";
+                throw "ERROR: missing value parameter";
               } 
             } else {
-              raise "ERROR: missing value parameter";
+              throw "ERROR: missing value parameter";
             };
           } else if (o == "in") {
             //
