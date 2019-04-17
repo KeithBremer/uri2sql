@@ -16,6 +16,7 @@ Where:<br>
 `value_list` is one or more values, separated by colons, depending on the operator<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(`tween` must have two values and `in` can have one or more values, the rest must have just one value)<br>
 `$sort` introduces a list of one or more sort columns
+
 If the operator is `eq` it can be omitted along with its enclosing square brackets. e.g. `price=123.45` is the same as `price[eq]=123.45`.
 
 Operators can be negated by prefixing the operator with a hyphen (minus) symbol.
