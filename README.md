@@ -47,17 +47,10 @@ The function takes two arguments:<br>
 
 The params argument has the form of a JavaScript object of the form:
 ```
-{
-      column:     value,
-      column: {
-            operator:   value
-      },
-      column: {
-            'tween':    value:value
-      },
-      column: {
-            'in':       value:value:...
-      }
+{ column: value,
+  column: { operator:   value },
+  column: { 'tween':    value:value },
+  column: { 'in':       value:value:... }
 }
 ```
 Each of the above object attribute formats represents one of the possible query formats provided by the URI.  So, for example, the query in the URI:
@@ -66,11 +59,8 @@ Each of the above object attribute formats represents one of the possible query 
 ```
 is represented as the object (automatically generated into `req.query` by body-parser):
 ```
-{
-      name: {
-            like:       "%Jones"
-      },
-      country: "UK"
+{ name: { like: "%Jones" },
+  country: "UK"
 }
 ```
 The columns argument is an array of column names asgainst which the query column names can be validated (to ensure there are no mistakes in the URI and that there isn't a nasty SQL injection attempt), for example:
@@ -99,18 +89,16 @@ Because the `uri2sql` function uses exceptions to signal errors, calls to this f
 ### Output
 The function returns an object of the form:
 ```
-      {
-            sql:  "WHERE column1 = $1 AND column2 <= $2 AND column3 BETWEEN $3 AND $4",
-            values: ["value1", "value2", "value3", "value4"]
+      { sql:  "WHERE column1 = $1 AND column2 <= $2 AND column3 BETWEEN $3 AND $4",
+        values: ["value1", "value2", "value3", "value4"]
       }
 ```
 This helps to ensure that SQL injection is avoided and is the preferred method of supplying values into SQL.
 
 For example, the URI `http://server:3000/customers?name[like]=%Jones&country=UK` would return:
 ```
-      {
-            sql: "WHERE name LIKE $1 AND country = $2",
-            values: ["%Jones", "UK"]
+      { sql: "WHERE name LIKE $1 AND country = $2",
+        values: ["%Jones", "UK"]
       }
 ```
 
@@ -122,6 +110,8 @@ These can then be used in a query by appending the 'sql' above to the SELECT sta
 ```
 
 ### To Do
-Implement a syntax to support sorting the result set by generating an ORDER BY clause.
+(MUST) Implement a syntax to support sorting the result set by generating an ORDER BY clause.
 
-Provide a means to specify OR operations between predicates - currently only AND operations are supported.
+(SHOULD) Provide a means to specify OR operations between predicates - currently only AND operations are supported.
+
+(COULD) Other fancy stuff 
