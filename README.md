@@ -16,7 +16,6 @@ Where:<br>
 `value_list` is one or more values, separated by colons, depending on the operator<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(`tween` must have two values and `in` can have one or more values, the rest must have just one value)<br>
 `$sort` introduces a list of one or more sort columns
-
 If the operator is `eq` it can be omitted along with its enclosing square brackets. e.g. `price=123.45` is the same as `price[eq]=123.45`.
 
 Operators can be negated by prefixing the operator with a hyphen (minus) symbol.
@@ -24,6 +23,8 @@ Operators can be negated by prefixing the operator with a hyphen (minus) symbol.
 Multiple conditions can be provided, separated by `&` symbols in the URI.
 
 Sorting can be specified using the `$sort` parameter of the form: `$sort=city:-name` where `city` and `name` are columns in the table.
+
+Sort columns can be negated to specify descending sort order, e.g. `Ssort=city:-name` causes data to be sorted into ascending city and descending name within city.
 
 ### Example
 The following URI:<br>
