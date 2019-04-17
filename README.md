@@ -3,18 +3,19 @@
 ### Release 0.1 alpha
 This is an alpha release - not yet ready for serious use.
 ### Description
-This module provides a function that takes the HTTP query parameters appended to a URI and generates an SQL WHERE clause that implements the query parameters as SQL predicates. The module supports most of the basic SQL conditional operators: =, !=, <, <=, >, >=, LIKE, IN, BETWEEN and IS.
+This module provides a function that takes the HTTP query parameters appended to a URI and generates a SQL WHERE clause that implements the query parameters as SQL predicates and an ORDER BY clause the permits specifying the sort order of results. The module supports most of the basic SQL conditional operators: =, !=, <, <=, >, >=, LIKE, IN, BETWEEN and IS along with sorting by any column in asending (default) or descending order.
 
 The HTTP query must be formulated using the following syntax:
 ```
-http://server/endpoint?col[operator]=value_list&...
+http://server/endpoint?col[operator]=value_list&...&$sort=col:col...
 ```
 Where:<br>
 `col` is the column name from the table<br>
 `operator` is one of `eq`, `ne`, `lt`, `lte`, `gt`, `gte`, `like`, `in`, `tween`, `is`<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;to correspond with `=`, `!=`, `<`, `<=`, `>`, `>=`, `LIKE`, `IN`, `BETWEEN` and `IS`<br>
 `value_list` is one or more values, separated by colons, depending on the operator<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(`tween` must have two values and `in` can have one or more values, the rest must have just one value)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(`tween` must have two values and `in` can have one or more values, the rest must have just one value)<br>
+`$sort` introduces a list of one or more sort columns
 
 If the operator is `eq` it can be omitted along with its enclosing square brackets. e.g. `price=123.45` is the same as `price[eq]=123.45`.
 
@@ -22,14 +23,16 @@ Operators can be negated by prefixing the operator with a hyphen (minus) symbol.
 
 Multiple conditions can be provided, separated by `&` symbols in the URI.
 
+Sorting can be specified using the `$sort` parameter of the form: `$sort=city:-name` where `city` and `name` are columns in the table.
+
 ### Example
 The following URI:<br>
 ```
-      http://myserver:3000/customers?name[like]=%Jones&country[in]=UK:USA
+      http://myserver:3000/customers?name[like]=%Jones&country[in]=UK:USA&$sort=city:-name
 ```
 is translated to:
 ```
-      WHERE name LIKE '%JONES' AND country IN ('UK', 'USA')
+      WHERE name LIKE '%JONES' AND country IN ('UK', 'USA') ORDER BY city, name DESC
 ```
 
 ### Usage
@@ -93,7 +96,7 @@ The function returns an object of the form:
         values: ["value1", "value2", "value3", "value4"]
       }
 ```
-This helps to ensure that SQL injection is avoided and is the preferred method of supplying values into SQL.
+By using SQL bind variables this helps to ensure that SQL injection is avoided and is the preferred method of supplying values into SQL.
 
 For example, the URI `http://server:3000/customers?name[like]=%Jones&country=UK` would return:
 ```
@@ -110,8 +113,6 @@ These can then be used in a query by appending the 'sql' above to the SELECT sta
 ```
 
 ### To Do
-(MUST) Implement a syntax to support sorting the result set by generating an ORDER BY clause.
-
 (SHOULD) Provide a means to specify OR operations between predicates - currently only AND operations are supported.
 
-(COULD) Other fancy stuff 
+(COULD) Other fancy stuff

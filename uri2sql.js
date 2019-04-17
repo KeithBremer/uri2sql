@@ -59,6 +59,19 @@ function uri2sql(query, columns) {
       }
     }     // end of getValue function
 
+    function checkCol(colName) {
+      //
+      // Check column name is valid in the array of column names provided.
+      // If no column names are supplied then ignore these checks, otherwise
+      // throw an exception if not found.
+      //
+      if (columns.length > 0) {   // if the column array is provided check the name
+        if (columns.find(o => o.column_name == colName) == undefined) { 
+          throw "ERROR: invalid column name: " + colName;
+        };
+      }
+    }
+
     //
     // The valid operators allowed in http queries (within [...] after the column name)
     // 
@@ -76,6 +89,7 @@ function uri2sql(query, columns) {
     ];
 
     var sql = "";                 // initial sql string
+    var sort = "";                // initial order by string
     var valueArray = [];          // initial value array
     var substitution = 1;         // number for $n bind placeholder
 
@@ -84,102 +98,144 @@ function uri2sql(query, columns) {
     // into corresponding SQL predicate syntax. Each new predicate is appended
     // to the previous ones with AND.
     //
-    for (var col in query) {      // for each query parameter (introduced by column name)
-      if (columns.length > 0) {   // if the column array is provided check the name
-        if (columns.find(o => o.column_name == col) == undefined) { 
-          throw "ERROR: invalid column name: " + col;
-        };
-      }
-
-      var negate = 0;             // initially assume un-negated operator
-
-      //
-      // Handle the appending of code to the sql and deal with the case
-      // of no operator (assumes 'eq' be default)
-      //
-      if (sql == "") {
-        sql = sql + "WHERE ";     // this must be the 1st parameter
-      } else {
-        sql = sql + "AND ";       // if not 1st parameter add AND keyword
-      }
-      sql = sql + col + " ";      // append column name
+    for (var col in query) {        // for each query parameter (introduced by column name)
 
       var typ = typeof(query[col]);     // get the type of the value
 
-      //
-      // If the datatype of the value isn't an object then treat it as a
-      // simple value.  Add a bind variable to the sql (e.g. $3) and push
-      // the value onto the array.
-      //
-      if (typ != "object") {            // not an object so no operator provided
-        sql = sql + "= " + subs + (substitution++) + " ";    // so assume eq (=)
-        val = getValue(query[col]);     // get the parameter value
-        valueArray.push(val);           // and append it to the array
+      if (col.charAt(0) == "$") {   // $ = special symbol, not a columns name
+        //
+        // Special symbol processing:
+        //
+        if (col == "$sort") {       
+          //
+          // Syntax:
+          //    $sort=col             sort results by column
+          //    $sort=col1:col2:...   sort results by col1, col2, etc.
+          //    $sort=-col1:col2      sort results by col1 desc, col2 asc
+          //
+          if (typ != "string") {
+            throw "ERROR: incorrect $sort parameter value: " + query[col];
+          }
+          //
+          // get an array of sort columns & process each...
+          //
+          var sortCols = getValue(query[col]).split(":");
+
+          sortCols.forEach( (sortCol) => {
+            let sortDir = "";           // sort direction: initially default
+            if (sortCol.charAt(0) == "-") {   // is sort negated?
+              sortDir = " DESC";              // if so then direction = DESC
+              sortCol = sortCol.substring(1); // remove leading "-"
+            }
+            checkCol(sortCol);          // check the column name
+            //
+            // Construct the ORDER BY clause
+            //
+            if (sort == "") {
+              sort = "ORDER BY ";       // start with ORDER BY
+            } else {
+              sort = sort + ", ";       // add more after comma
+            }
+            sort = sort + sortCol + sortDir;  // add column & direction
+          });   // end of sortCols.foreach...
+        }     // end of 'if (col == "$sort") ...'
       } else {
         //
-        // Process the parameter value as an object of the form:
-        //  { operator: value }
-        // with separate code for 'is', 'in' and 'tween' operators
+        // Filter condition processing
         //
-        for (var op in query[col]) {    // else traverse sub-object 
-          o = op;                       // copy the operator so it can be isolated from - prefix
-          if (op.charAt(0) == "-") {    // if - prefix then
-            negate = 1;                 //   set negate flag
-            o = op.substring(1);        //   strip prefix
-          }
+        checkCol(col);
+
+        var negate = 0;             // initially assume un-negated operator
+        //
+        // Handle the appending of code to the sql and deal with the case
+        // of no operator (assumes 'eq' be default)
+        //
+        if (sql == "") {
+          sql = sql + "WHERE ";     // this must be the 1st parameter
+        } else {
+          sql = sql + "AND ";       // if not 1st parameter add AND keyword
+        }
+        sql = sql + col + " ";      // append column name
+
+        //
+        // If the datatype of the value isn't an object then treat it as a
+        // simple value.  Add a bind variable to the sql (e.g. $3) and push
+        // the value onto the array.
+        //
+        if (typ != "object") {            // not an object so no operator provided
+          sql = sql + "= " + subs + (substitution++) + " ";    // so assume eq (=)
+          val = getValue(query[col]);     // get the parameter value
+          valueArray.push(val);           // and append it to the array
+        } else {
           //
-          // Select the corresponding SQL operator for the one from the URI
+          // Process the parameter value as an object of the form:
+          //  { operator: value }
+          // with separate code for 'is', 'in' and 'tween' operators
           //
-          if (operators.includes(o)) {
-            sql = sql + sqlop[negate][operators.indexOf(o)];
-          } else {
-            sql = sql + "= ";           // default to = if not found
-          }
-          if (o == "is") {
+          for (var op in query[col]) {    // else traverse sub-object 
+            o = op;                       // copy the operator so it can be isolated from - prefix
+            if (op.charAt(0) == "-") {    // if - prefix then
+              negate = 1;                 //   set negate flag
+              o = op.substring(1);        //   strip prefix
+            }
             //
-            // Code for the 'is' operator
+            // Select the corresponding SQL operator for the one from the URI
             //
-            sql = sql + "NULL ";        // use literal NULL & ignore value
-          } else if (o == "tween") {
-            //
-            // Code for the 'tween' operator
-            //
-            sql = sql + subs + (substitution++) + " AND " + subs + (substitution++) + " ";
-            val = getValue(query[col][op]);
-            var varr = val.split(":");
-            if (varr[0] != undefined) {
-              valueArray.push(varr[0]);
-              if (varr[1] != undefined) {
-                valueArray.push(varr[1])
+            if (operators.includes(o)) {
+              sql = sql + sqlop[negate][operators.indexOf(o)];
+            } else {
+              sql = sql + "= ";           // default to = if not found
+            }
+            if (o == "is") {
+              //
+              // Code for the 'is' operator
+              //
+              sql = sql + "NULL ";        // use literal NULL & ignore value
+            } else if (o == "tween") {
+              //
+              // Code for the 'tween' operator
+              //
+              sql = sql + subs + (substitution++) + " AND " + subs + (substitution++) + " ";
+              val = getValue(query[col][op]);
+              var varr = val.split(":");
+              if (varr[0] != undefined) {
+                valueArray.push(varr[0]);
+                if (varr[1] != undefined) {
+                  valueArray.push(varr[1])
+                } else {
+                  throw "ERROR: missing value parameter";
+                } 
               } else {
                 throw "ERROR: missing value parameter";
-              } 
+              };
+            } else if (o == "in") {
+              //
+              // Code for the 'in' operator
+              //
+              let first = true;
+              val = getValue(query[col][op]);
+              val.split(":").forEach(function(value) {
+                sql = sql + (first?"":", ") + subs + (substitution++);
+                valueArray.push(value);
+                first = false;
+              });
+              sql = sql + ") ";
             } else {
-              throw "ERROR: missing value parameter";
-            };
-          } else if (o == "in") {
-            //
-            // Code for the 'in' operator
-            //
-            let first = true;
-            val = getValue(query[col][op]);
-            val.split(":").forEach(function(value) {
-              sql = sql + (first?"":", ") + subs + (substitution++);
-              valueArray.push(value);
-              first = false;
-            });
-            sql = sql + ") ";
-          } else {
-            //
-            // Code for all other operators (=, !=, <, >, etc.)
-            //
-            sql = sql + subs + (substitution++) + " ";
-            val = getValue(query[col][op]);
-            valueArray.push(val);
+              //
+              // Code for all other operators (=, !=, <, >, etc.)
+              //
+              sql = sql + subs + (substitution++) + " ";
+              val = getValue(query[col][op]);
+              valueArray.push(val);
+            }
           }
-        }
-      };
+        };
+      }
     }
+    //
+    // Append any sort clause then return
+    //
+    sql = sql + sort;
     return {'sql': sql, 'values': valueArray};
   }
   

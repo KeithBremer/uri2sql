@@ -51,8 +51,8 @@ app.get("/customers", function(req, res) {
         res.status(400).json(e);
         return;
       }
-      //console.log(filtr.sql);
-      //console.log(filtr.values)
+      console.log(filtr.sql);
+      console.log(filtr.values)
       db.query("SELECT * FROM customers " + filtr.sql, filtr.values,
         function(err, result) {
           // console.log(result.rows);
