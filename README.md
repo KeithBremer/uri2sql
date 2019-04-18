@@ -1,15 +1,16 @@
 # uri2sql
 ## JS module that parses URI query parameters and creates an SQL WHERE clause to match
 ### Release 0.1 alpha
-This is an alpha release - not yet ready for serious use.
+This is an alpha release - not yet ready for serious use.  
 ### Description
 This module provides a function that takes the HTTP query parameters appended to a URI and generates a SQL WHERE clause that implements the query parameters as SQL predicates and an ORDER BY clause the permits specifying the sort order of results. The module supports most of the basic SQL conditional operators: =, !=, <, <=, >, >=, LIKE, IN, BETWEEN and IS along with sorting by any column in asending (default) or descending order.
 
 The HTTP query must be formulated using the following syntax:
 ```
-http://server/endpoint?col[operator]=value_list&...&$sort=col:col...
+http://server/endpoint?col[operator]=value_list&col=value&...&$sort=col:col...
 ```
 Where:<br>
+`http://server/endpoint` is the URL of the endpoint you want to query (this will usually be used in the context of a GET method)
 `col` is the column name from the table<br>
 `operator` is one of `eq`, `ne`, `lt`, `lte`, `gt`, `gte`, `like`, `in`, `tween`, `is`<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;to correspond with `=`, `!=`, `<`, `<=`, `>`, `>=`, `LIKE`, `IN`, `BETWEEN` and `IS`<br>
@@ -19,9 +20,9 @@ Where:<br>
 
 If the operator is `eq` it can be omitted along with its enclosing square brackets. e.g. `price=123.45` is the same as `price[eq]=123.45`.
 
-Operators can be negated by prefixing the operator with a hyphen (minus) symbol.
+Operators can be negated by prefixing the operator with a hyphen (minus) symbol. Thus `[-like]` corresponds to `NOT LIKE` in SQL. 
 
-Multiple conditions can be provided, separated by `&` symbols in the URI.
+Multiple conditions can be provided, separated by `&` symbols in the URI, for example, `product_type=USB Mouse&price[lt]=15.00`
 
 Sorting can be specified using the `$sort` parameter of the form: `$sort=city:-name` where `city` and `name` are columns in the table.
 
@@ -38,6 +39,8 @@ is translated to:
 ```
 
 ### Usage
+See the file server.js for an example of the function usage - feel free to modify it as needed.
+
 Use this function in the callback function of an express endpoint that is expected to return multiple records. `uri2sql` assumes that you have pre-processed the request using middleware such as body-parser with:
 ```
       app.use(bodyParser.urlencoded({ extended: true }));
@@ -50,7 +53,7 @@ The function takes two arguments:<br>
 `params` structured query parameters (e.g. `req.query` after parsing with body-parser to get the URI query)<br>
 `columns` an array of valid column names to be accepted (or an empty array to accept any)
 
-The params argument has the form of a JavaScript object of the form:
+The params argument has the form of a JavaScript object of the form (produced by body-parser as req.query):
 ```
 { column: value,
   column: { operator:   value },
@@ -92,7 +95,7 @@ Because the `uri2sql` function uses exceptions to signal errors, calls to this f
 ```
 
 ### Output
-The function returns an object of the form:
+On successful completion the function returns an object of the form:
 ```
       { sql:  "WHERE column1 = $1 AND column2 <= $2 AND column3 BETWEEN $3 AND $4",
         values: ["value1", "value2", "value3", "value4"]
@@ -115,6 +118,10 @@ These can then be used in a query by appending the 'sql' above to the SELECT sta
 ```
 
 ### To Do
-(SHOULD) Provide a means to specify OR operations between predicates - currently only AND operations are supported.
+(SHOULD) Make the function independent of the particular RDBMS used. Currently only PostgreSQL and Oracle are supported.
+
+(SHOULD) Provide a means to specify OR operations between predicates - currently only AND operations are supported. This would also require a means to parenthesise parts of the query to override execution precedence.
+
+(COULD) Cater for expressions in addition to column names in value lists. This is quite tricky as it could lead to the danger of SQL injection but would make the function more usable in the context of complex queries.
 
 (COULD) Other fancy stuff
