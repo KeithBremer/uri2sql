@@ -1,4 +1,16 @@
-
+// Module uri2sql.js
+//
+// The purpose of this module is to take an HTTP query string and
+// convert it into a piece of SQL comprising a WHERE clause along
+// with optional ORDER BY and other clauses.
+//
+// Once converted the SQL piece can be appended to an SQL query
+// to filter the result set according to client requiremnents.
+//
+// Author:  Keith Bremer
+// License: LGPL-3.0 (GNU Lesser General Public License, version 3)
+// Release 0.1 (Alpha)
+//
 var subs = "$";       // set for PostgreSQL, use : for Oracle
 
 function setsubs(symbol) {
