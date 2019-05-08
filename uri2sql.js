@@ -97,7 +97,7 @@ function uri2sql(query, columns) {
           // normal translation...
         ['= ', '!= ', '< ', '>= ', '> ', '<= ', 'IN (', 'LIKE ', 'BETWEEN ', 'IS '],
           // negated translation...
-        ['!= ', '= ', '>= ', '< ', '<= ', '> ', 'NOT IN ', 'NOT LIKE ', 'NOT BETWEEN ', 'IS NOT ']
+        ['!= ', '= ', '>= ', '< ', '<= ', '> ', 'NOT IN (', 'NOT LIKE ', 'NOT BETWEEN ', 'IS NOT ']
     ];
 
     var sql = "";                 // initial sql string
