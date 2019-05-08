@@ -5,6 +5,8 @@ This is an alpha release - not yet ready for serious use.
 ### Description
 This module is intended for use with Node.js and Express at the server.  It provides a function that takes the HTTP query parameters appended to a URI after preprocessing by the body-parser middleware and generates a SQL WHERE clause that implements the query parameters as SQL predicates and an ORDER BY clause the permits specifying the sort order of results. The module supports most of the basic SQL conditional operators: =, !=, <, <=, >, >=, LIKE, IN, BETWEEN and IS along with sorting by any column in asending (default) or descending order.
 
+The module tries to conform to the RESTful approach to coding APIs for filtering and sorting as described in https://www.moesif.com/blog/technical/api-design/REST-API-Design-Filtering-Sorting-and-Pagination/#
+
 The HTTP query must be formulated using the following syntax:
 ```
 http://server/endpoint?col[operator]=value_list&col=value&...&$sort=col:col...
